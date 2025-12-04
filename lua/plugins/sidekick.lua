@@ -13,7 +13,8 @@ return {
       {
         "<leader>ac",
         function()
-          require("sidekick.cli").toggle({ name = "claude-code", focus = true })
+          require("sidekick.cli").hide({ name = "codex" })
+          require("sidekick.cli").toggle({ name = "claude", focus = true })
         end,
         desc = "Toggle Claude Code",
       },
@@ -21,6 +22,7 @@ return {
       {
         "<leader>ao",
         function()
+          require("sidekick.cli").hide({ name = "claude" })
           require("sidekick.cli").toggle({ name = "codex", focus = true })
         end,
         desc = "Toggle Codex",
