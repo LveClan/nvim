@@ -17,15 +17,40 @@ return {
   {
     "mfussenegger/nvim-jdtls",
     opts = function(_, opts)
+      opts = opts or {}
+
       -- 指定 jdtls 运行时使用的 Java 路径（必须是 JDK 21+）
       local jdtls_java_path = "/usr/lib/jvm/temurin-21-jdk-amd64/bin/java"
 
-      -- 修改启动命令，添加 --java-executable 参数
-      if opts.cmd then
-        table.insert(opts.cmd, "--java-executable=" .. jdtls_java_path)
-      else
-        opts.cmd = { vim.fn.exepath("jdtls"), "--java-executable=" .. jdtls_java_path }
+      local function resolve_jdtls_cmd()
+        local uv = vim.uv or vim.loop
+        local mason_cmd = vim.fn.stdpath("data") .. "/mason/bin/jdtls"
+        if uv.fs_stat(mason_cmd) then
+          return mason_cmd
+        end
+        local cmd = vim.fn.exepath("jdtls")
+        if cmd ~= "" then
+          return cmd
+        end
+        return "jdtls"
       end
+
+      -- 修改启动命令：避免 cmd[1] 为空，同时添加 --java-executable 参数
+      if type(opts.cmd) ~= "table" then
+        opts.cmd = opts.cmd and { opts.cmd } or {}
+      end
+
+      if opts.cmd[1] == nil or opts.cmd[1] == "" then
+        opts.cmd[1] = resolve_jdtls_cmd()
+      end
+
+      for i = #opts.cmd, 1, -1 do
+        if type(opts.cmd[i]) == "string" and vim.startswith(opts.cmd[i], "--java-executable=") then
+          table.remove(opts.cmd, i)
+        end
+      end
+
+      table.insert(opts.cmd, 2, "--java-executable=" .. jdtls_java_path)
 
       -- 配置 init_options
       opts.init_options = vim.tbl_deep_extend("force", opts.init_options or {}, {
