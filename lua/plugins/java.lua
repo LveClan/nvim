@@ -36,21 +36,29 @@ return {
       end
 
       -- 修改启动命令：避免 cmd[1] 为空，同时添加 --java-executable 参数
-      if type(opts.cmd) ~= "table" then
-        opts.cmd = opts.cmd and { opts.cmd } or {}
-      end
-
-      if opts.cmd[1] == nil or opts.cmd[1] == "" then
-        opts.cmd[1] = resolve_jdtls_cmd()
-      end
-
-      for i = #opts.cmd, 1, -1 do
-        if type(opts.cmd[i]) == "string" and vim.startswith(opts.cmd[i], "--java-executable=") then
-          table.remove(opts.cmd, i)
+      local cmd = {} ---@type string[]
+      if type(opts.cmd) == "string" then
+        cmd = { opts.cmd }
+      elseif type(opts.cmd) == "table" then
+        for _, v in ipairs(opts.cmd) do
+          if type(v) == "string" and v ~= "" then
+            cmd[#cmd + 1] = v
+          end
         end
       end
 
-      table.insert(opts.cmd, 2, "--java-executable=" .. jdtls_java_path)
+      if cmd[1] == nil then
+        cmd[1] = resolve_jdtls_cmd()
+      end
+
+      for i = #cmd, 1, -1 do
+        if vim.startswith(cmd[i], "--java-executable=") then
+          table.remove(cmd, i)
+        end
+      end
+
+      table.insert(cmd, 2, "--java-executable=" .. jdtls_java_path)
+      opts.cmd = cmd
 
       -- 配置 init_options
       opts.init_options = vim.tbl_deep_extend("force", opts.init_options or {}, {
