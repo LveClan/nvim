@@ -97,6 +97,20 @@ return {
           },
         },
       })
+      -- 自定义 root_dir，解决多仓库/submodule 问题
+      -- local java_root_markers = {
+      --   "pom.xml",
+      --   "build.gradle",
+      --   "build.gradle.kts",
+      --   "settings.gradle",
+      --   "settings.gradle.kts",
+      --   "gradlew",
+      --   "mvnw",
+      -- }
+      opts.root_dir = function(fname)
+        -- local root = require("jdtls.setup").find_root(java_root_markers, fname)
+        return vim.fn.getcwd()
+      end
 
       return opts
     end,
