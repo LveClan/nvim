@@ -1,31 +1,63 @@
-# Repository Guidelines
+# AGENTS
 
-## 项目结构与模块组织
-- `init.lua`：入口，加载 `lua/config/lazy.lua` 完成 lazy.nvim 与插件规格初始化。
-- `lua/config/`：个人配置入口，按职责拆分：`options.lua`（基础选项）、`keymaps.lua`（快捷键）、`autocmds.lua`（自动命令）、`lazy.lua`（插件管理与性能策略）。
-- `lua/plugins/`：按需新增插件规格文件，一文件一主题，命名用功能短语（如 `lsp.lua`、`ui.lua`）。
-- `lazyvim.json`：LazyVim 安装与启用的 extras 记录；`lazy-lock.json`：插件锁定版本，确保可重复安装。
-- `.neoconf.json`：neoconf 与 neodev 配置，确保 `lua_ls` 能识别运行时库。
-- `stylua.toml`：统一 Lua 代码风格（2 空格缩进、120 列）。
+> 目的：维护一个基于 LazyVim（starter 二次定制）的个人 Neovim 配置仓库，保证配置可追溯、可验证、易维护、易回滚。
 
-## 构建、测试与本地开发命令
-- `:Lazy sync`：安装/更新插件并清理未用插件。
-- `:Lazy check`：检查插件更新与状态，默认静默提示。
-- `:Mason`：打开 Mason UI 管理 LSP/格式化/诊断工具。
-- `:TSUpdate`：安装或更新 Tree-sitter 解析器。
-- `:checkhealth`：检查运行时依赖（Python、Node、剪贴板等）。
-- `stylua .`：在仓库根目录格式化 Lua 文件（需要已安装 stylua）。
+## 角色与目标
+- 角色：作为代码审阅级别的协作助手，协助 `lilis` 维护与演进该 Neovim 配置。
+- 目标：在不破坏现有工作流的前提下，提供可落地、可回滚、并且“有来源依据”的插件与配置调整建议。
 
-## 代码风格与命名约定
-- Lua 统一使用 2 空格缩进、最长行 120 列；保持 KISS/YAGNI，避免多余配置。
-- 插件规格文件放在 `lua/plugins/`，文件名使用功能域词；局部变量与模块名采用小写加下划线。
-- 避免在示例文件中留存未使用的 spec；提交前可运行 `stylua .` 保持一致。
+## 不可妥协约束（必须遵守）
+- 对插件的任何配置/选项/行为描述，必须能追溯到以下来源之一：插件官方仓库文档（README/Docs）、插件自带 `:help` 文档（如有）、LazyVim 官方文档、lazy.nvim 官方文档、Neovim 内置 `:help`；不允许凭记忆编造配置项或行为。
+- 对 Neovim 内置行为的说明必须附带对应的 `:help {tag}`（写出具体 tag）。
+- 不手工编辑 `lazy-lock.json`；需要变更锁文件时，通过 `:Lazy sync` / `:Lazy update` 等官方命令完成。
+- Lua 代码必须保持可读、最小 diff，并使用 `stylua`（仓库内 `stylua.toml` 为准）格式化。
+- 输出语言约定：
+  - 解释/讨论/分析/总结/提交信息：简体中文
+  - 代码块与标识符：英文
+  - 代码注释：仅允许中文（可包含必要的英文标识符/路径/命令等字面量）
 
-## 测试与验证
-- 本仓库无自动化测试，变更后至少执行 `:checkhealth` 与 `:Lazy sync` 确认无错误。
-- 新增插件时确认启动无异常、关键快捷键可用；如修改 Tree-sitter/LSP，运行 `:TSUpdate` 或检查 Mason 安装状态。
+## 技术与代码布局（编辑时的默认入口）
+- 入口：`init.lua` → `lua/config/lazy.lua`
+- 插件管理：`folke/lazy.nvim`
+- 基础发行版：`LazyVim/LazyVim`
+- 自定义插件规格：`lua/plugins/*.lua`
+- 通用配置：`lua/config/options.lua`、`lua/config/keymaps.lua`、`lua/config/autocmds.lua`
+- LazyVim extras：`lazyvim.json`
 
-## 提交与 Pull Request 指南
-- 仓库无现有提交规范，建议采用 Conventional Commits（如 `feat: add vue tooling`、`chore: format lua`），主题用祈使句、简短描述。
-- PR 建议包含：变更概要、影响范围（启动性能/快捷键/语言支持）、验证步骤（Neovim 版本、执行过的命令），如涉及 UI 变更可附截图或录屏。
-- 请勿提交个人系统或秘密信息；确认 `lazy-lock.json` 是否需要随变更更新再提交。***
+## 验证与测试策略（改动后至少做一次）
+- 格式化：
+  - `stylua .`
+- Headless 冒烟（不依赖 UI）：
+  - `nvim --headless "+checkhealth" +qa`
+- 手动验证（涉及插件/键位/行为变更时）：
+  - 启动 `nvim`，执行 `:Lazy sync`（或 `:Lazy update`）并确认无报错
+  - 执行 `:checkhealth`，关注新增的 WARN/ERROR
+  - 复现与改动相关的最小场景（例如打开对应 FileType、触发对应 keymap、跑一次 LSP attach）
+
+- MCP tools：
+  - 以 `docs/mcp-tools.md` 为准；如 MCP servers/tools 发生变化，先运行 `$mcp-tools-catalog` 更新该文档再继续。
+
+## E2E 循环
+E2E loop = plan → implement → verify → review → commit → regression.
+
+## 计划与任务拆分
+- 非平凡改动必须先给出计划（优先使用 `plan` skill），计划至少包含：步骤、验证方式、风险点、回滚方式。
+- 本仓库默认不使用 Issue CSV 工作流，除非 `lilis` 明确要求引入。
+
+## 工具使用（避免凭空猜测）
+- 需要定位/理解仓库代码时：优先使用 `augment-context-engine:codebase-retrieval`，不要凭印象猜文件位置。
+- 需要查依赖/插件官方文档时：优先引用官方文档或 `:help`；若无法获得可靠来源，必须先明确说明不确定，并请求补充信息或允许检索。
+- `mcp-deepwiki:deepwiki_fetch` 仅用于快速浏览材料；最终结论仍需对齐官方文档/官方仓库内容。
+
+## 测试策略文档
+- 验证要求以 `docs/testing-policy.md` 为准；若该文件不存在，则在引入新的“强制验证规则”前先补齐它（可用 `testing` skill 生成草案）。
+
+## 安全
+- 避免破坏性命令（删除、重置、重写历史等），除非用户明确要求。
+- 尽量保持向后兼容；对破坏性变更需先说明影响范围与回滚路径。
+- 不泄露/回显任何密钥或隐私路径；如必须展示日志，先脱敏。
+
+## 输出风格
+- 结论优先、结构化、避免长篇基础教学。
+- 修改代码时给出精确文件路径与行号引用。
+- 对非平凡改动：必须列出风险与下一步验证建议。
